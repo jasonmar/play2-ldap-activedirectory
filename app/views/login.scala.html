@@ -1,0 +1,47 @@
+@(form: Form[(String,String)])(implicit flash: Flash)
+
+<html>
+<head>
+  <title>Test App</title>
+  <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")" />
+  <link rel="stylesheet" type="text/css" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
+</head>
+<body>
+
+@form.globalError.map { error =>
+<p class="error">
+    Error: @error.message
+</p>
+}
+
+@flash.get("success").map { message =>
+<p class="success">
+    @message
+</p>
+}
+
+@flash.get("error").map { message =>
+<p class="error">
+    Error: @message
+</p>
+}
+
+<header>
+    <a href="@routes.Application.index" id="logo">Test App</a>
+</header>
+
+@helper.form(routes.Application.authenticate) {   
+<h1>Sign in</h1>
+<p>
+  <input type="uid" name="uid" placeholder="uid" id="uid" value="@form("uid").value">
+</p>
+<p>
+  <input type="password" name="password" id="password" placeholder="Password">
+</p>
+<p>
+  <button type="submit" id="loginbutton">Login</button>
+</p>
+}
+
+</body>
+</html>
