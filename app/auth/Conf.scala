@@ -17,7 +17,7 @@
 
 package auth
 
-import com.typesafe.config.ConfigFactor
+import com.typesafe.config.ConfigFactory
 
 object Conf {
   val conf = ConfigFactory.load()
