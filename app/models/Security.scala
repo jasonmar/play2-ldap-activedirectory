@@ -15,12 +15,11 @@
  *
  */
 
-package auth
+package models
 
 import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
 import controllers.routes
-import auth._
 
 trait Security {
 
@@ -37,8 +36,8 @@ trait Security {
   }
 
   def HasRole(requiredRoles: List[String])(f: => String => Request[AnyContent] => Result) = IsAuthenticated {
-    uid => 
-      request => 
+    uid =>
+      request =>
         LDAP.getUserRoles(uid) match {
           case Some(userRoles) if requiredRoles.intersect(userRoles).length > 0 => f(uid)(request)
           case _ => Results.Forbidden
@@ -46,11 +45,11 @@ trait Security {
   }
 
   def HasRoleUpload(requiredRoles: List[String])(b: BodyParser[MultipartFormData[TemporaryFile]] = BodyParsers.parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = IsAuthenticated(b) {
-    uid => 
-      request => 
+    uid =>
+      request =>
         LDAP.getUserRoles(uid) match {
           case Some(userRoles) if requiredRoles.intersect(userRoles).length > 0 => f(uid)(request)
-          case _ => 
+          case _ =>
             Results.Forbidden
         }
   }

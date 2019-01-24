@@ -15,7 +15,7 @@
  *
  */
 
-package auth
+package models
 
 import com.typesafe.config.ConfigFactory
 

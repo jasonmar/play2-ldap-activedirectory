@@ -15,10 +15,8 @@
  *
  */
 
-package auth
+package models
 
-import auth._
-import play.api._
 import play.api.data.Form
 import play.api.data.Forms._
 
@@ -45,9 +43,9 @@ object User {
   }
   
   val loginForm = Form(
-    tuple("uid" -> text, "password" -> text) verifying ("Invalid username or password", 
-      result => result match { 
-        case (uid, password) => authenticate(uid, password).isDefined 
+    tuple("uid" -> text, "password" -> text) verifying ("Invalid username or password",
+      result => result match {
+        case (uid, password) => authenticate(uid, password).isDefined
       }
     )
   )

@@ -15,16 +15,20 @@
  *
  */
 
-package auth
+package models
+
+import java.security.MessageDigest
+
+import scala.concurrent.duration._
 
 import com.unboundid.ldap.sdk._
-import com.unboundid.util.ssl.{SSLUtil,TrustAllTrustManager,TrustStoreTrustManager}
-import play.api.cache.Cache
-import play.api.Play.current
-import java.security.MessageDigest
-import Conf._
+import com.unboundid.util.ssl.{SSLUtil, TrustAllTrustManager, TrustStoreTrustManager}
+import javax.inject.{Inject, Singleton}
+import models.Conf._
+import play.api.cache._
 
-object LDAP {
+@Singleton
+case class LDAP @Inject() (cache: CacheApi){
 
   val trustManager = {
     (ldapProtocol,ldapUseKeystore) match {
@@ -56,29 +60,30 @@ object LDAP {
 
   def getUserDN (uid:String) : Option[String] = {
     val cacheKey = "userDN." + uid
-    val userDN: Option[String] = Cache.getOrElse[Option[String]](cacheKey) {
+    val userDN: Option[String] = cache.getOrElse[Option[String]](cacheKey) {
       println("LDAP: get DN for " + uid)
       // Get DN for a given uid
       val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
         .search(new SearchRequest(
-          userBaseDN, 
+          userBaseDN,
           SearchScope.SUB,
           Filter.createEqualityFilter(uidAttribute,uid))
         )
         .getSearchEntries
       getDN(searchEntries)
-    }    
+    }
     userDN
   }
   
   def getUserRoles (uid: String) : Option[List[String]] = {
     val cacheKey = "userRoles." + uid
-    val userRoles : Option[List[String]] = Cache.getOrElse[Option[List[String]]](cacheKey,ldapCacheDuration) {
+    val userRoles : Option[List[String]] = cache.getOrElse[Option[List[String]]](cacheKey,ldapCacheDuration
+        .millis) {
       println("LDAP: get roles for " + uid)
       try {
         val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
           .search(new SearchRequest(
-            userBaseDN, 
+            userBaseDN,
             SearchScope.SUB,
             Filter.createEqualityFilter(uidAttribute,uid),roleMemberAttribute)
           )
@@ -88,9 +93,9 @@ object LDAP {
           .toList
           .map { _.split(",")(0).split("=")(1) }
         Some(groups)
-      } catch { 
-        case lde: LDAPException => 
-          None 
+      } catch {
+        case lde: LDAPException =>
+          None
       }
     }
     userRoles
@@ -98,12 +103,12 @@ object LDAP {
 
   def getRoleDN (role:String) : Option[String] = {
     val cacheKey = "roleDN." + role
-    val roleDN : Option[String] = Cache.getOrElse[Option[String]](cacheKey) {
+    val roleDN : Option[String] = cache.getOrElse[Option[String]](cacheKey) {
       println("LDAP: get DN for " + role)
       // Get DN for a given role
       val searchEntries : java.util.List[com.unboundid.ldap.sdk.SearchResultEntry] = connectionPool
         .search(new SearchRequest(
-          roleBaseDN, 
+          roleBaseDN,
           SearchScope.SUB,
           Filter.createEqualityFilter(roleAttribute,role))
         )
@@ -134,7 +139,7 @@ object LDAP {
         201 // role not found
       case (Some(r),None) =>
         202 // uid not found
-      case (None,None) => 
+      case (None,None) =>
         203 // role and uid not found
     }
   }
@@ -144,11 +149,11 @@ object LDAP {
     val hash : String =  MessageDigest.getInstance("SHA-256")
       .digest(msg.getBytes)
       .foldLeft("")(
-        (s: String, b: Byte) => 
+        (s: String, b: Byte) =>
           s + Character.forDigit((b & 0xf0) >> 4, 16) + Character.forDigit(b & 0x0f, 16)
       )
     val cacheKey = "bindResult." + hash
-    val bindResult : Int = Cache.getOrElse[Int](cacheKey,ldapCacheDuration) {      
+    val bindResult : Int = cache.getOrElse[Int](cacheKey,ldapCacheDuration.millis) {
       getUserDN(uid) match {
         case Some(dn) =>
           println("LDAP: binding " + uid + " hash=" + hash)
@@ -164,7 +169,7 @@ object LDAP {
 
   def getFullName (uid:String) : String = {
     val cacheKey = "userFullName." + uid
-    val userFullName : String = Cache.getOrElse[String](cacheKey,ldapCacheDuration) {
+    val userFullName : String = cache.getOrElse[String](cacheKey,ldapCacheDuration.millis) {
       println("LDAP: search " + uid + " Full Name")
       connectionPool
         .search(
@@ -181,5 +186,4 @@ object LDAP {
     }
     userFullName
   }
-
 }
