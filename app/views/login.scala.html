@@ -1,4 +1,6 @@
-@(form: Form[(String,String)])(implicit flash: Flash)
+@(form: Form[(String,String)])(implicit messages : Messages, request: RequestHeader, flash: Flash)
+
+@* @import helper._ *@
 
 <html>
 <head>
@@ -30,7 +32,7 @@
     <a href="@routes.Application.index" id="logo">Test App</a>
 </header>
 
-@helper.form(routes.Application.authenticate) {   
+@helper.form(routes.Application.authenticate) {
 <h1>Sign in</h1>
 <p>
   <input type="uid" name="uid" placeholder="uid" id="uid" value="@form("uid").value">

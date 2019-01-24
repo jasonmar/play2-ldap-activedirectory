@@ -17,19 +17,24 @@
 
 package controllers
 
-import play.api._
+import javax.inject.Inject
+import models.{Security, User}
+import play.api.i18n.I18nSupport
 import play.api.mvc._
-import views._
-import auth.{User,Security,Conf}
 
-object Application extends Controller with Security {
-
+class Application @Inject() (cc : ControllerComponents)
+    extends AbstractController(cc)
+    with Security
+    with I18nSupport {
+  
+  import models.Conf
+  
   def index = HasRole(List(Conf.acg1)) {
-    uid => _ => 
+    uid => _ =>
       Ok(views.html.index("Authenticated as " + uid))
   }
   
-  def login = Action { 
+  def login = Action {
     implicit request =>
       Ok(views.html.login(User.loginForm))
   }
@@ -42,12 +47,12 @@ object Application extends Controller with Security {
     MovedPermanently("/" + path)
   }
   
-  def authenticate = Action { 
+  def authenticate = Action {
     implicit request =>
       User.loginForm.bindFromRequest.fold(
-        formWithErrors => 
+        formWithErrors =>
           BadRequest(views.html.login(formWithErrors)),
-        user => 
+        user =>
           Redirect(routes.Application.index)
             .withSession("uid" -> user._1)
       )
